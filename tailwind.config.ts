@@ -58,6 +58,10 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      fontFamily: {
+        sans: ['"Geist Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"Geist Mono"', '"SF Mono"', '"Fira Code"', 'monospace'],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
