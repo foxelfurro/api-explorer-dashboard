@@ -1,11 +1,27 @@
-const API_BASE = '';
+const ENV_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
+function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/$/, '');
+}
 
 export function getApiBase(): string {
-  return localStorage.getItem('api_base_url') || API_BASE;
+  const stored = localStorage.getItem('api_base_url');
+  if (stored) {
+    return normalizeBaseUrl(stored);
+  }
+
+  return normalizeBaseUrl(ENV_API_BASE);
 }
 
 export function setApiBase(url: string) {
-  localStorage.setItem('api_base_url', url);
+  const normalized = normalizeBaseUrl(url);
+
+  if (!normalized) {
+    localStorage.removeItem('api_base_url');
+    return;
+  }
+
+  localStorage.setItem('api_base_url', normalized);
 }
 
 function authHeaders(): Record<string, string> {
@@ -20,7 +36,21 @@ async function handleResponse(res: Response) {
     const body = await res.text();
     throw new Error(`${res.status}: ${body}`);
   }
-  return res.json();
+
+  if (res.status === 204) {
+    return null;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 // Auth
