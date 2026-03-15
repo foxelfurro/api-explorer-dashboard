@@ -1,11 +1,20 @@
-const API_BASE = '';
+const ENV_API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
+function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/$/, '');
+}
 
 export function getApiBase(): string {
-  return localStorage.getItem('api_base_url') || API_BASE;
+  const stored = localStorage.getItem('api_base_url');
+  if (stored) {
+    return normalizeBaseUrl(stored);
+  }
+
+  return normalizeBaseUrl(ENV_API_BASE);
 }
 
 export function setApiBase(url: string) {
-  const normalized = url.trim().replace(/\/$/, '');
+  const normalized = normalizeBaseUrl(url);
 
   if (!normalized) {
     localStorage.removeItem('api_base_url');

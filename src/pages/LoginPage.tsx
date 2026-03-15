@@ -40,7 +40,7 @@ const LoginPage = () => {
       <form onSubmit={handleSubmit} className="w-[320px] rounded border border-border bg-card p-6 space-y-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight text-foreground">Inventory API Client</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in to test the API</p>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to use the official dashboard</p>
         </div>
 
         <div className="space-y-2">
