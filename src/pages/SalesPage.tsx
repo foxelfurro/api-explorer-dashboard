@@ -18,6 +18,7 @@ interface InventoryItem {
 const SalesPage = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [inventarioId, setInventarioId] = useState<number>(0);
   const [cantidad, setCantidad] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -25,31 +26,47 @@ const SalesPage = () => {
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
+    setError('');
+
     try {
       const data = await getInventory();
       const list = Array.isArray(data) ? data : data.data || data.inventory || [];
       setItems(list);
-      if (list.length > 0 && !inventarioId) setInventarioId(list[0].id);
-    } catch {
-      // silent
+
+      if (list.length === 0) {
+        setInventarioId(0);
+        return;
+      }
+
+      setInventarioId((prevId) => (list.some((item: InventoryItem) => item.id === prevId) ? prevId : list[0].id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load inventory');
     } finally {
       setLoading(false);
     }
-  }, [inventarioId]);
+  }, []);
 
-  useEffect(() => { fetchInventory(); }, [fetchInventory]);
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const getName = (item: InventoryItem) =>
     item.product?.name || item.catalog?.name || item.name || item.product_name || `Item #${item.id}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!inventarioId || cantidad < 1) {
+      toast({ title: 'Invalid sale data', description: 'Please select an item and a valid quantity.', variant: 'destructive' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await registerSale({ inventario_id: inventarioId, cantidad });
       toast({ title: 'Sale registered' });
       setCantidad(1);
-      fetchInventory();
+      await fetchInventory();
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
     } finally {
@@ -64,6 +81,12 @@ const SalesPage = () => {
       </div>
 
       <div className="px-6 py-4">
+        {error && (
+          <div className="mb-4 rounded border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            {error}
+          </div>
+        )}
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading inventory…</p>
         ) : (
@@ -75,12 +98,17 @@ const SalesPage = () => {
                 onChange={(e) => setInventarioId(Number(e.target.value))}
                 className="flex h-9 w-full rounded border border-input bg-card px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
+                disabled={items.length === 0}
               >
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getName(item)} (stock: {item.stock})
-                  </option>
-                ))}
+                {items.length === 0 ? (
+                  <option value={0}>No inventory available</option>
+                ) : (
+                  items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getName(item)} (stock: {item.stock})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

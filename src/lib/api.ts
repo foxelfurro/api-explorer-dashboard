@@ -5,7 +5,14 @@ export function getApiBase(): string {
 }
 
 export function setApiBase(url: string) {
-  localStorage.setItem('api_base_url', url);
+  const normalized = url.trim().replace(/\/$/, '');
+
+  if (!normalized) {
+    localStorage.removeItem('api_base_url');
+    return;
+  }
+
+  localStorage.setItem('api_base_url', normalized);
 }
 
 function authHeaders(): Record<string, string> {
@@ -20,7 +27,21 @@ async function handleResponse(res: Response) {
     const body = await res.text();
     throw new Error(`${res.status}: ${body}`);
   }
-  return res.json();
+
+  if (res.status === 204) {
+    return null;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 // Auth
